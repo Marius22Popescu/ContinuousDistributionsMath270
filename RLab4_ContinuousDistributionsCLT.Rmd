@@ -1,0 +1,550 @@
+---
+title: "Rlab 4: Continuous Distributions and the Central Limit Theorem"
+author: "Popescu Marius"                   
+date: "April 28, 2017"
+output: html_document
+---
+<style type="text/css">
+
+body{ /* Normal  */
+   font-size: 18px;
+}
+td {  /* Table  */
+   font-size: 8px;
+}
+h1 { /* Header 1 */
+ font-size: 28px;
+ color: DarkBlue;
+}
+h2 { /* Header 2 */
+ font-size: 22px;
+ color: DarkBlue;
+}
+h3 { /* Header 3 */
+ font-size: 18px;
+ color: DarkBlue;
+}
+code.r{ /* Code block */
+  font-size: 10px;
+}
+pre { /* Code block */
+  font-size: 10px
+}
+</style>
+
+<!-- Leave this be -->
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+
+
+</br>
+
+
+***Task 1: Exponential Distribution ***
+
+1.  The lifetime of an iPhone (in months) can be modeled as exponentially distributed with an average of 14 months. [Hint: $\lambda\ne 14$]
+
+a. What is the probability that a new iPhone will need to be replaced in the first 6 months?
+
+```{r}
+pexp(6,1/14)
+```
+
+b. If you purchased the phone for $750 and the company will provide a full rebate if it needs replacement in the first 3 months, a half rebate if it needs replacement in the next 3 months, and nothing if it needs replacement after 6 months, then what is the expected amount the company will have to rebate per phone?
+
+```{r}
+pexp(3,1/14)*750+(pexp(6,1/14)-pexp(3,1/14))*375
+```
+
+c. According to this model, 95% of all iPhones would need replacement within how many months? [Hint: quantile function]
+
+```{r}
+quantile(.95, 1/14)
+```
+
+d. According to the Central Limit Theorem, if a Quality Analytics consultant samples batches of 100 iPhones, they should expect the averages to follow what distribution (include parameters)?
+
+ANSWER: They should expected the value to follow the normal distribution with a mean = 14 and a standard deviation equal with 14/(sqrt(100))
+```{r}
+mean = 14
+mean
+standev = 14/(sqrt(100))
+standev
+```
+e. Using your answer from (d), write up solid, probability-based reasoning the Quality Analytics consultant could use to defend why they think something unusual is happening if they sample a batch of 100 iPhones and find the sample's average lifetime is less than 11 months.
+```{r}
+standev = 14/(sqrt(100))
+pnorm(11,14,standev)
+```
+Because the probability that if they sample a batch of 100 iPhones and find the sample's average lifetime is less than 11 months, is  0.01606229 the Quality Analytics consultant can think that this can happend just if something unusual is happening.
+
+<br>
+
+
+
+
+
+</br>
+
+
+
+2.  For the above problem, the expected value of the distribution of lifetimes is 14, and the standard deviation is also 14.  However, the method we used for computing these values in R is way off for continuous distributions:
+
+```{r}
+dx=0.1
+Xvalues=seq(0,200,dx) #A vector of a bunch of x-values at an interval of dx
+Densities=dexp(Xvalues,rate=1/14)  # The corresponding density values for each Xvalue
+Expected=sum(Xvalues*Densities)*dx
+StDev=sqrt(sum(Densities*(Xvalues-Expected)^2)*dx)
+cat("Expected Value was found to be ", Expected,"\n")
+cat("Standard Deviation was found to be ", StDev,"\n")
+```
+
+a. Why doesn't this work?
+
+Because dx was omitted for the computation in the sum.
+
+b. Modify (or scrap and create a new version of) the above code so that it approximates the true values. 
+
+```{r}
+dx=0.1
+Xvalues=seq(0,200,dx) #A vector of a bunch of x-values at an interval of dx
+Densities=dexp(Xvalues,rate=1/14)  # The corresponding density values for each Xvalue
+Expected=sum(Xvalues*Densities)*dx
+StDev=sqrt(sum(Densities*(Xvalues-Expected)^2)*dx)
+cat("Expected Value was found to be ", Expected,"\n")
+cat("Standard Deviation was found to be ", StDev,"\n")
+```
+
+Your modified version should produce an estimate within 0.01 in the expected value, and 0.03 in the standard deviation.  [Hint: Riemann summation]
+<br>
+
+
+
+
+
+
+
+</br>
+
+
+
+***Task 2: The beta distribution***
+
+The beta distribution with parameters $\alpha$ and $\beta$ (which control the shape of the distribution) is a continuous probability distribution defined on the interval [0, 1].
+
+In Bayesian inference, the beta distribution is the conjugate prior probability distribution for the Bernoulli, binomial, negative binomial and geometric distributions. For example, the beta distribution can be used in Bayesian analysis to describe initial knowledge concerning probability of success such as the probability that a space vehicle will successfully complete a specified mission. The beta distribution is a suitable model for the random behavior of percentages and proportions.
+
+
+Consider the following plots, which show the beta distribution for different $\alpha$ and $\beta$ values:
+
+BLACK: $\alpha=\beta=0.5$
+
+<span style="color:blue;">
+Blue: $\alpha=\beta=2$
+</span>
+
+<span style="color:red;">
+Blue: $\alpha=5$ $\beta=1$
+</span>
+
+<span style="color:yellow;">
+Blue: $\alpha=3$ $\beta=2$
+</span>
+
+<span style="color:green;">
+Blue: $\alpha=2$ $\beta=3$
+</span>
+
+
+<span style="color:purple;">
+Blue: $\alpha=1$ $\beta=5$
+</span>
+
+```{r}
+Xvals=seq(0,1,0.01)
+plot(Xvals,dbeta(Xvals,1,5),type="l",col="purple")
+lines(Xvals,dbeta(Xvals,0.5,0.5))
+lines(Xvals,dbeta(Xvals,2,2),col="blue")
+lines(Xvals,dbeta(Xvals,5,1),col="red")
+lines(Xvals,dbeta(Xvals,3,2),col="yellow")
+lines(Xvals,dbeta(Xvals,2,3),col="green")
+
+
+```
+
+
+1.  Using this graph and/or by playing around, investigate: if $X\sim Beta(\alpha,\beta)$, which values are most likely to occur if $\alpha$ is slightly greater than $\beta$?
+
+A. X values close to 0.
+B. X values a bit under 0.5
+C. X values around 0.5
+D. X values a bit over 0.5
+E. X values close to 1
+
+
+ANSWER:  a bit over 0.5 is most likely to occur
+
+**An example for the beta distribution ** 
+"Batting averages" in baseball would be better described as batting percentages: they give the percentage of time that a player hits and ends on base out of the total number of times they go up to bat. 
+
+As percentages, these values between 0 and 1. 
+
+0.266 is considered the "average" batting percentage, while 0.300 would be considered an excellent batting percentage.
+
+
+But since you don't the actual season's batting percentage for a player before the end of the season, you might use information from past seasons, and these past batting averges are generally distributed in a beta distribution.
+
+
+2.  If a player is above average, you know that most of their seasons will have a batting percentage somewhere between 0.266 and 0.300.  Experiment to find parameters $\alpha$ and $\beta$ which produce a beta distribution with most of the values between 0.266 and 0.300.
+
+```{r}
+Xvals=seq(0,1,0.01)
+plot(Xvals,dbeta(Xvals,1,5),type="l",col="purple")
+lines(Xvals,dbeta(Xvals,.5,.5))
+lines(Xvals,dbeta(Xvals,1500,4000),col="green")
+
+
+```
+
+ANSWER: The parameters $\alpha$ = 1500 and $\beta$ = 4000 which produce a beta distribution with most of the values between 0.266 and 0.300.
+
+
+
+3.  Use the distribution from part 2. to find the probability that the player will have a batting average of at least 0.29 this season.
+<br>
+
+```{r}
+pexp(.29,1500,4000)
+prob= 1 - pexp(.29,1500,4000)
+prob
+```
+
+
+
+
+</br>
+
+***Task 3: Normal Distribution***
+
+The duration that a cold medicine's effects last follows a normal distribution with mean of 5.5 hours and standard deviation of 1.2 hours. 
+
+1. Create a plot of the probability density function for how long the cold medicine lasts.
+```{r}
+plot(dnorm(0:20, mean =5.5, sd =1.2))
+```
+
+2. Use functions in R to answer the following questions:
+
+a. What percentage of users from the population will have the medicine run out in less than 5 hours?
+```{r}
+dnorm(5, mean =5.5, sd =1.2)*100
+```
+b. If the company wants to label the bottle with a duration time and FDA regulations say it must label it with a time so that 90% of all users will have the medicine effective for AT LEAST that long, what time is appropriate?
+
+<br>
+
+```{r}
+pnorm(7.1, mean =5.5, sd =1.2)
+```
+
+
+</br>
+
+***Task 4: Central Limit Theorem***
+
+The following code produces a function `SampleMeanDist` which will simulate taking many samples from the same population, and then produce information about the distribution of sample means. It will also plot a histogram of the original population values, as well as a the sample mean histogram compared to the normal distribution predicted by the CLT.
+
+
+
+```{r}
+
+SampleMeanDist<-function(Population,ntrials,samplesize){
+  
+  ## Just printing some information about the Population ##
+  cat("Population average is ", mean(Population),"\n")
+  cat("Population standard deviation is ", sd(Population),"\n")
+  cat("Based on the sample size, the theoretical standard error will be ", sd(Population)/sqrt(samplesize),"\n")
+  hist(Population, main="Histogram of full Population")
+  
+  ## This loop creates many trials (each producing a sample mean) ##
+  SampleMeans=c()
+  for (i in 1:ntrials){
+    SampleMeans=c(SampleMeans,mean(sample(Population,samplesize)))
+  }
+  
+  ## Here we plot a histogram of all the resulting sample means ##
+  hist(SampleMeans,main="Histogram of Sample means and the CLT predicted Normal Distribution",freq=FALSE)
+  
+  ## MeanValues is produced by using the range of all sample means
+  ## And then this is plotted vs. the theoretical N(mean, SE) distribution
+  MeanValues=seq(min(SampleMeans),max(SampleMeans),(max(SampleMeans)-min(SampleMeans))/100)
+  lines(MeanValues,dnorm(MeanValues,mean(Population),sd(Population)/sqrt(samplesize)),col="blue")
+  
+  ## Printing out some information about the sample mean distribution
+  cat("Average of the sample means was ", mean(SampleMeans),"\n")
+  cat("Standard deviation of the sample means was ", sd(SampleMeans),"\n") 
+}
+```
+
+
+I'll use it in an example: if my population is composed of scores on a 100 question multiple choice exam, where 2000 students studied and have their scores normally distributed around 80 with standard deviation of 7pts, and 400 students just randomly guessed answers and have a probability of 1/4 of getting each question right, then the population data might be:
+
+```{r}
+Studied=rnorm(2000,80,7)
+Guessed=rbinom(400,100,1/4)
+
+AllScores=c(Studied,Guessed)
+
+```
+
+And if I want to simulate repeatedly taking samples of 50 students at a time and plotting the resulting sample means, I could use
+
+```{r}
+repeated= 10000 # Here I'm just choosing a number of times to repeat the sampling.
+
+SampleMeanDist(Population=AllScores,ntrials=repeated,samplesize=50)
+```
+
+<br>
+
+
+
+
+
+</br>
+
+
+
+1. Play around with the function above by changing sample size, number of trials, and the population distribution.  Summarize what you find here, making sure you answer at least the three following questions:
+
+
+a. With everything else fixed, how does changing the sample size influence the distribution of sample means?
+```{r}
+
+SampleMeanDist<-function(Population,ntrials,samplesize){
+  
+  ## Just printing some information about the Population ##
+  cat("Population average is ", mean(Population),"\n")
+  cat("Population standard deviation is ", sd(Population),"\n")
+  cat("Based on the sample size, the theoretical standard error will be ", sd(Population)/sqrt(samplesize),"\n")
+  hist(Population, main="Histogram of full Population")
+  
+  ## This loop creates many trials (each producing a sample mean) ##
+  SampleMeans=c()
+  for (i in 1:ntrials){
+    SampleMeans=c(SampleMeans,mean(sample(Population,samplesize)))
+  }
+  
+  ## Here we plot a histogram of all the resulting sample means ##
+  hist(SampleMeans,main="Histogram of Sample means and the CLT predicted Normal Distribution",freq=FALSE)
+  
+  ## MeanValues is produced by using the range of all sample means
+  ## And then this is plotted vs. the theoretical N(mean, SE) distribution
+  MeanValues=seq(min(SampleMeans),max(SampleMeans),(max(SampleMeans)-min(SampleMeans))/100)
+  lines(MeanValues,dnorm(MeanValues,mean(Population),sd(Population)/sqrt(samplesize)),col="blue")
+  
+  ## Printing out some information about the sample mean distribution
+  cat("Average of the sample means was ", mean(SampleMeans),"\n")
+  cat("Standard deviation of the sample means was ", sd(SampleMeans),"\n") 
+}
+```
+
+
+```{r}
+Studied=rnorm(2000,80,7)
+Guessed=rbinom(400,100,1/4)
+
+AllScores=c(Studied,Guessed)
+
+```
+
+```{r}
+repeated= 10000 # Here I'm just choosing a number of times to repeat the sampling.
+
+SampleMeanDist(Population=AllScores,ntrials=repeated,samplesize=500)
+```
+
+ANSWER: The sample means will be closed together because the standard deviation will be smaller. 
+
+b. With everything else fixed, how does changing the number of trials influence the distribution of sample means?
+
+```{r}
+
+SampleMeanDist<-function(Population,ntrials,samplesize){
+  
+  ## Just printing some information about the Population ##
+  cat("Population average is ", mean(Population),"\n")
+  cat("Population standard deviation is ", sd(Population),"\n")
+  cat("Based on the sample size, the theoretical standard error will be ", sd(Population)/sqrt(samplesize),"\n")
+  hist(Population, main="Histogram of full Population")
+  
+  ## This loop creates many trials (each producing a sample mean) ##
+  SampleMeans=c()
+  for (i in 1:ntrials){
+    SampleMeans=c(SampleMeans,mean(sample(Population,samplesize)))
+  }
+  
+  ## Here we plot a histogram of all the resulting sample means ##
+  hist(SampleMeans,main="Histogram of Sample means and the CLT predicted Normal Distribution",freq=FALSE)
+  
+  ## MeanValues is produced by using the range of all sample means
+  ## And then this is plotted vs. the theoretical N(mean, SE) distribution
+  MeanValues=seq(min(SampleMeans),max(SampleMeans),(max(SampleMeans)-min(SampleMeans))/100)
+  lines(MeanValues,dnorm(MeanValues,mean(Population),sd(Population)/sqrt(samplesize)),col="blue")
+  
+  ## Printing out some information about the sample mean distribution
+  cat("Average of the sample means was ", mean(SampleMeans),"\n")
+  cat("Standard deviation of the sample means was ", sd(SampleMeans),"\n") 
+}
+```
+
+
+```{r}
+Studied=rnorm(2000,80,7)
+Guessed=rbinom(400,100,1/4)
+
+AllScores=c(Studied,Guessed)
+
+```
+
+```{r}
+repeated= 100 # Here I'm just choosing a number of times to repeat the sampling.
+
+SampleMeanDist(Population=AllScores,ntrials=repeated,samplesize=500)
+```
+
+ANSWER: The underlined distribution does not change but because of the fewer trials the histogram will change. 
+
+c. Can you find a probability distribution so `un-normal'  that taking the distribution of sample means with sample size=30 isn't modeled nicely by the CLT's predicted normal distribution?
+
+```{r}
+
+SampleMeanDist<-function(Population,ntrials,samplesize){
+  
+  ## Just printing some information about the Population ##
+  cat("Population average is ", mean(Population),"\n")
+  cat("Population standard deviation is ", sd(Population),"\n")
+  cat("Based on the sample size, the theoretical standard error will be ", sd(Population)/sqrt(samplesize),"\n")
+  hist(Population, main="Histogram of full Population")
+  
+  ## This loop creates many trials (each producing a sample mean) ##
+  SampleMeans=c()
+  for (i in 1:ntrials){
+    SampleMeans=c(SampleMeans,mean(sample(Population,samplesize)))
+  }
+  
+  ## Here we plot a histogram of all the resulting sample means ##
+  hist(SampleMeans,main="Histogram of Sample means and the CLT predicted Normal Distribution",freq=FALSE)
+  
+  ## MeanValues is produced by using the range of all sample means
+  ## And then this is plotted vs. the theoretical N(mean, SE) distribution
+  MeanValues=seq(min(SampleMeans),max(SampleMeans),(max(SampleMeans)-min(SampleMeans))/100)
+  lines(MeanValues,dnorm(MeanValues,mean(Population),sd(Population)/sqrt(samplesize)),col="blue")
+  
+  ## Printing out some information about the sample mean distribution
+  cat("Average of the sample means was ", mean(SampleMeans),"\n")
+  cat("Standard deviation of the sample means was ", sd(SampleMeans),"\n") 
+}
+```
+
+
+```{r}
+Studied=rgeom(2000,1/5)
+Guessed=rbinom(400,100,1/4)
+
+AllScores=c(Studied,Guessed)
+
+Number1=rgeom(500,1/5)
+Number2=rbinom(100,400,1/4)
+Number3=rbinom(1000,400,.9)
+
+AllNumbers=c(Number1,Number2,Number3)
+
+```
+
+```{r}
+repeated= 100 # Here I'm just choosing a number of times to repeat the sampling.
+
+SampleMeanDist(Population=AllNumbers,ntrials=repeated,samplesize=500)
+```
+<br>
+
+ANSWER: It is still follow the distribution but because the standard deviation is to bigg , will be different
+
+
+</br>
+
+
+
+2. Use your knowledge about probabilities, along with the Central Limit Theorem, to help you determine the following: Each day you go to the casino and play the slot machine there until you hit jackpot 5 times. You know (after too much "experimentation") that the probability of hitting jackpot on each turn is 1/10. You are interested in knowing how your experience over the past month compares to the "true" average number of failed turns it takes until you hit the jackpot 5 times.
+
+
+a. What distribution models the number of failed turns you take each day?
+
+ANSWER: It is Negative Binomial distribution with k = 5, and p = 1/6
+
+b. What are the mean and standard deviation of this distribution?
+```{r}
+mean = 5/(1/6)
+mean
+standev = sqrt((5*(1-1/6))/((1/6)*(1/6)))
+standev
+```
+
+c. Using the CLT, the sample averages for different months should be distributed according to a normal distribution with what average, and what standard deviation?
+
+ANSWER: The average will be the same like mean: k/p 
+```{r}
+ave = 5/(1/6)
+ave
+```
+The standard deviation will be:
+```{r}
+stdv = standev/sqrt(30)
+stdv
+```
+
+d. How likely is it that this *month* it took at least an average of 50 failed turns before hitting 5 jackpots?
+```{r}
+1 - pnorm(50, 30, stdv)
+```
+
+e. How likely is it that this *day* it took at least 50 failed turns before hitting 5 jackpots?
+```{r}
+1 - pbinom(50, 30, 1/6)
+```
+
+f. The middle 50% of *monthly averages* fall between what two values?
+
+```{r}
+x = qnorm(.25, 30, stdv)
+x
+y = qnorm(.75, 30, stdv)
+y
+```
+
+g. The middle 50% of *daily* results fall between what two values?
+
+```{r}
+x = qnbinom(.25, 5, 1/6)
+x
+y = qnbinom(.75, 5, 1/6)
+y
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
